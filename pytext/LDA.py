@@ -7,6 +7,19 @@ import pyLDAvis.gensim
 import pyLDAvis
 
 class LDA():
+    """
+    this cless makes, saves to desk, and loads
+        1- gensim dictionary
+        2- corpus
+        3- gensim lda model
+    Args:
+        data -> pandas series of type object (containing text) (optional)
+        dictionary -> gensim.corpora.dictionary
+        corpus-> gensim corpus (optional)
+        model-> gensim lda model (optional)
+        text_data= pandas cleaned text (optional)
+        vis= pyLDAvis.display objec (optional)
+    """
     def __init__(self, data=None, model=None, corpus=None, dictionary=None, text_data=None, vis=None):
         self.data = data
         self.model = model
@@ -14,6 +27,7 @@ class LDA():
         self.dictionary = dictionary
         self.text_data = text_data
         self.vis = vis
+
     "________________________DICTIONARY______________________"
     def make_dict(self):
         """takes pandas series and returns dictionary to use with gensim   """
@@ -24,7 +38,7 @@ class LDA():
 
     def save_dict(self, dict_name = 'dict'):
         """saves the dictionary to the disk
-            dict_name --> name of the dictionary
+            dict_name --> dictionary path + filename
         """
         self.dictionary.save('{}.gensim'.format(dict_name))
 
@@ -34,7 +48,7 @@ class LDA():
 
     "________________________CORPUS___________________________"
     def make_corpus(self):
-        """ makes corpus """
+        """ makes a corpus from gensim.corpora.dictionary object """
         corpus = [self.dictionary.doc2bow(text) for text in self.text_data]
         self.corpus = corpus
 
@@ -54,6 +68,7 @@ class LDA():
 
     def load_model(self, model_name='model'):
         self.model = gensim.models.ldamodel.LdaModel.load('{}.gensim'.format(model_name))
+
     "________________________VIS_____________________________"
     def make_vis(self, sort_topics=True):
         lda_display = pyLDAvis.gensim.prepare(self.model,self.corpus,self.dictionary,sort_topics=sort_topics)

@@ -1,19 +1,20 @@
+from bs4 import BeautifulSoup
+from nltk.corpus import stopwords
+from fuzzywuzzy import fuzz, process
+from nltk.tokenize import wordpunct_tokenize
+from pandas_profiling import ProfileReport
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from bs4 import BeautifulSoup
-from nltk.corpus import stopwords
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
-from nltk.tokenize import wordpunct_tokenize
-from pandas_profiling import ProfileReport
+import warnings
 import re
-#loadin the list of stop words
-stop_words = set(stopwords.words('english'))
+
+stop_words = set(stopwords.words('english')) # srop words list
 sns.set_style('whitegrid')
 IT_stop = stop_words.copy()
 IT_stop.discard('it')
+
 
 def fuzzy_match(city,matchs_list):
     """returns the the most likely matching value if not, it returns the city_name asis"""
@@ -26,14 +27,12 @@ def fuzzy_match(city,matchs_list):
 
 def parse_html(html_doc):
     """returns a string of parsed html with all stop words removed"""
+    warnings.filterwarnings("ignore")
     try:
-        if html_doc == np.NaN:
-            return np.NaN
-        else:
-            soup = BeautifulSoup(html_doc, 'html.parser')
-            list_of_words = [i for i in wordpunct_tokenize(
-            re.sub(r'\d+|[^\w\s]', '', (soup.text.lower()))) if i not in stop_words ]
-            return ' '.join(map(lambda x: '%s' % x, list_of_words))
+        soup = BeautifulSoup(html_doc, 'html.parser')
+        list_of_words = [i for i in wordpunct_tokenize(
+        re.sub(r'\d+|[^\w\s]', '', (soup.text.lower()))) if i not in stop_words ]
+        return ' '.join(map(lambda x: '%s' % x, list_of_words))
     except TypeError:
         return np.NaN
 
@@ -42,13 +41,10 @@ def clean_text(row,  tech_list):
     """returns a string of parsed html with all stop words removed"""
     row = str(row)
     try:
-        if row == np.NaN:
-            return np.NaN
-        else:
-            list_of_words = [i for i in wordpunct_tokenize(
-            re.sub(r'\d+|[^\w\s]', ' ', (row.lower()))) if i in tech_list]
-            astring = ' '.join(map(lambda x: '%s' % x, list_of_words))
-            return astring
+        list_of_words = [i for i in wordpunct_tokenize(
+        re.sub(r'\d+|[^\w\s]', ' ', (row.lower()))) if i in tech_list]
+        astring = ' '.join(map(lambda x: '%s' % x, list_of_words))
+        return astring
     except TypeError:
         return np.NaN
 
@@ -90,6 +86,17 @@ def min_max_salary(to_mach,thresh=60):
     _max = sub3.salary_max.mean()
     return """based on {} results the min salary is {} and the max is {} for jobs the contains {} keyword""".format(_shape[0],_min,_max,to_mach)
 
+
 def rec(job,num,match_list):
     matches = process.extract(query=job,limit=num, choices=match_list, scorer=fuzz.partial_ratio)
     return pd.DataFrame(matches).ix[:,0]
+
+
+def job_plot(data,variable,cat_num=10):
+    """this function takes a categorical variable and the dataframe it's in and the number of levels
+    and it returns a barplot visualization """
+    my_colors = [(x/12.0, x/25.0, 0.5) for x in range(cat_num)]
+    return data[variable].value_counts().head(cat_num).plot(kind='bar',
+                                                            figsize=(15,6),
+                                                            color=my_colors,
+                                                            title = 'the most frequent {} classes of the {} variable'.format(cat_num,variable))
